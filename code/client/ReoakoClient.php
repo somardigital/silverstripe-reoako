@@ -3,7 +3,7 @@
 namespace Octavenz\Reoako\Client;
 
 use Exception;
-use Silverstripe\SiteConfig\SiteConfig;
+use SilverStripe\SiteConfig\SiteConfig;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
 use GuzzleHttp\Client;
@@ -77,7 +77,7 @@ class ReoakoClient
         }
 
         // Check config for a value defined in YAML
-        $key = Config::inst()->get(ReokakoClient::class, 'api_key');
+        $key = Config::inst()->get(ReoakoClient::class, 'api_key');
         if (!empty($key)) {
             return $key;
         }
@@ -131,14 +131,11 @@ class ReoakoClient
 
             // Always return an array so the Controller doesn't crash
             return [
-                'error' => true,
-                'message' => $json['message'] ?? $error->getMessage(),
-                'status' => $response ? $response->getStatusCode() : 500
+                'error' => $json['message'] ?? ($json['detail'] ?? $error->getMessage())
             ];
         } catch (Exception $e) {
             return [
-                'error' => true,
-                'message' => $e->getMessage()
+                'error' => $e->getMessage()
             ];
         }
     }

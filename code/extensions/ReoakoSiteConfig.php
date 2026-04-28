@@ -6,7 +6,7 @@ use SilverStripe\Core\Extension;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\TextField;
 
-use Octavenz\Reoako\Client\ReokakoClient;
+use Octavenz\Reoako\Client\ReoakoClient;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
 
@@ -19,15 +19,14 @@ use SilverStripe\Core\Environment;
  */
 class ReoakoSiteConfig extends Extension
 {
-
     private static $db = [
         'ReoakoAPI' => 'Varchar'
     ];
 
     public function updateCMSFields(FieldList $fields)
     {
-
         $field = TextField::create("ReoakoAPI", "Reoako API Key");
+
         // Check environment as override
         if ($envApiKey = Environment::getEnv('SS_REOAKO_API_KEY')) {
             $field->setInputType("password");
@@ -41,7 +40,8 @@ class ReoakoSiteConfig extends Extension
         }
 
         // Key stored in YML
-        $key = Config::inst()->get(ReokakoClient::class, 'api_key');
+        $key = Config::inst()->get(ReoakoClient::class, 'api_key');
+
         if (!empty($key)) {
             $field->setInputType("password");
             $field->setReadonly(true);
@@ -53,7 +53,7 @@ class ReoakoSiteConfig extends Extension
             return;
         }
 
-        # Use stored API key from DB
+        // Use stored API key from DB
         if (empty($key)) {
             $fields->addFieldToTab(
                 "Root.Reoako",

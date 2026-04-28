@@ -144,7 +144,7 @@ set your API key in the field.
 Set you key via yml in your config
 
 ```
-Octavenz\Reoako\Client\ReokakoClient:
+Octavenz\Reoako\Client\ReoakoClient:
   api_key: <KEY>
 ```
 

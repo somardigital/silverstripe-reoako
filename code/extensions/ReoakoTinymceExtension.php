@@ -26,8 +26,16 @@ class ReoakoTinymceExtension extends Extension
             // Add button to the second line
             $editor->addButtonsToLine(2, 'reoakotranslationdialog');
 
-            // Use extended_valid_elements to avoid breaking the default TinyMCE schema
-            $editor->setOption('extended_valid_elements', 'reoako[*]');
+            // Append to extended_valid_elements rather than overwriting any existing elements configured by other modules or project config.
+            $extendedValidElements = $editor->getOption('extended_valid_elements');
+
+            if (strpos((string) $extendedValidElements, 'reoako[*]') === false) {
+                $extendedValidElements = $extendedValidElements
+                    ? $extendedValidElements . ',reoako[*]'
+                    : 'reoako[*]';
+
+                $editor->setOption('extended_valid_elements', $extendedValidElements);
+            }
         }
     }
 }

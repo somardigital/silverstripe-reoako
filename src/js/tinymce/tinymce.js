@@ -1,5 +1,3 @@
-import { editorcss } from "./editor.css";
-
 (function () {
   "use strict";
 
@@ -10,12 +8,16 @@ import { editorcss } from "./editor.css";
 
     tinymce.PluginManager.add("reoakotranslationdialog", function (editor) {
 
+      // Register the icon as an inline SVG (required by TinyMCE 6)
+      // Viewbox tightened from "0 0 37 37" to "6 8 24 22" to remove padding and enlarge icon
+      editor.ui.registry.addIcon('reoako-icon', '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="6 8 24 22"><path fill="currentColor" fill-rule="evenodd" d="M 7.783 9.605 C 7.783 8.606 8.592 7.797 9.591 7.797 L 27.673 7.797 C 28.672 7.797 29.481 8.606 29.481 9.605 L 29.481 24.974 C 29.481 25.973 28.672 26.782 27.673 26.782 L 21.069 26.782 L 19.166 28.977 C 18.882 29.305 18.383 29.305 18.097 28.977 L 16.195 26.782 L 9.591 26.782 C 8.592 26.782 7.783 25.973 7.783 24.974 L 7.783 9.605 Z M 17.126 21.858 L 14.981 21.858 L 14.981 12.016 L 18.984 12.016 C 21.291 12.016 22.618 13.274 22.618 15.236 C 22.618 16.579 21.981 17.553 20.827 18.035 L 22.98 21.858 L 20.612 21.858 L 18.692 18.37 L 17.126 18.37 L 17.126 21.858 Z M 17.126 13.72 L 17.126 16.7 L 18.58 16.7 C 19.811 16.7 20.414 16.209 20.414 15.228 C 20.414 14.254 19.811 13.72 18.571 13.72 L 17.126 13.72 Z" clip-rule="evenodd"/></svg>');
+
       editor.on('click', function(){
 
           const mceSelection = editor.selection;
           const currentNode = $(mceSelection.getEnd());
 
-          if (currentNode?.context?.nodeName === "REOAKO"){
+          if (currentNode[0]?.nodeName === "REOAKO"){
             const targetNode = currentNode.closest("reoako");
             mceSelection.select(targetNode.get(0));
           }
@@ -39,7 +41,7 @@ import { editorcss } from "./editor.css";
 
         if ($targetNode.length) {
           currentText = $targetNode.text();
-          if ($targetNode.children().length === 0) {
+          if ($targetNode[0]?.children.length === 0) {
             // select and replace text-only target
             insertElement = function (elem) {
               mceSelection.select($targetNode.get(0));
@@ -65,25 +67,24 @@ import { editorcss } from "./editor.css";
 
         url = "/reoako-modal/search?search_term=" + currentText;
 
-        var instance = tinymce.activeEditor.windowManager.open(
-          {
+        var instance = editor.windowManager.openUrl({
             title: "Reoako Search",
             url: url,
             width: 800,
-            height: 600,
-            editor: editor,
-          },
-          { currentText: currentText }
-        );
+            height: 600
+        });
 
         window._reoako = instance;
       }
 
-      const button = editor.addButton("reoakotranslationdialog", {
+      // addToggleButton handles both normal and active states in TinyMCE 6
+      editor.ui.registry.addToggleButton("reoakotranslationdialog", {
         icon: "reoako-icon",
         tooltip: "Reoako translation dialog",
-        onclick: showDialog,
-        stateSelector: "reoako",
+        onAction: showDialog,
+        onSetup: function (api) {
+          return editor.selection.selectorChangedWithUnbind('reoako', api.setActive).unbind;
+        }
       });
 
       editor.addCommand("mceTranslationDialog", showDialog);
@@ -125,11 +126,11 @@ import { editorcss } from "./editor.css";
         return content;
       }
 
-      editor.on("KeyUp", function(ed, e){
-        const evt = e || window.event;
+      editor.on("KeyUp", function(e){
+        const evt = e;
         var charCode = evt.keyCode || evt.which;
         const currentNode = $(editor.selection.getEnd());
-        const insideReoako = currentNode?.context?.nodeName === 'REOAKO';
+        const insideReoako = currentNode[0]?.nodeName === 'REOAKO';
 
         // 8 = backspace
         // 32 = space
@@ -149,7 +150,7 @@ import { editorcss } from "./editor.css";
           if(currentNode !== currentNode.closest("reoako")){
             const targetNode = currentNode.closest("reoako");
             const cursorPos = editor.selection.getRng().startOffset;
-            const targetLength = currentNode?.context?.innerText.length;
+            const targetLength = currentNode[0]?.innerText.length;
 
             if(cursorPos !== targetLength){
               editor.selection.select(targetNode.get(0));

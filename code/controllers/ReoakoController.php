@@ -2,9 +2,9 @@
 
 namespace Octavenz\Reoako\Controllers;
 
+use SilverStripe\Model\ArrayData;
+use SilverStripe\Model\List\ArrayList;
 use SilverStripe\Control\Controller;
-use SilverStripe\View\ArrayData;
-use SilverStripe\ORM\ArrayList;
 use Octavenz\Reoako\Client\ReoakoClient;
 use SilverStripe\View\Requirements;
 
@@ -46,7 +46,7 @@ class ReoakoController extends Controller
                 if (isset($results['error'])) {
                     return $this->customise(new ArrayData([
                         'search_term' => $val,
-                        'error' => $results->error
+                        'error' => (isset($results['error']) && $results['error']) ? $results['error'] : 'An error occurred while searching. Please try again later.'
                     ]))->renderWith('reoako');
                 }
 

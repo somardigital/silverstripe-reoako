@@ -2,11 +2,11 @@
 
 namespace Octavenz\Reoako\Extensions;
 
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 use SilverStripe\View\Requirements;
 use Octavenz\Reoako\Client\ReoakoClient;
 
-class ReoakoFrontendExtension extends DataExtension
+class ReoakoFrontendExtension extends Extension
 {
     public function contentcontrollerInit()
     {
@@ -15,9 +15,9 @@ class ReoakoFrontendExtension extends DataExtension
         $apiKey = $rc->getApiKey();
         if ($apiKey) {
 
-            $vars = array(
+            $vars = [
                 "REOAKO_API_KEY" => $apiKey
-            );
+            ];
             Requirements::javascriptTemplate("octavenz/reoako:dist/js/reoako-frontend.js", $vars);
         } else {
             Requirements::customScript('console.error("Reoako API key not set see README")');

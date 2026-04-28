@@ -2,6 +2,7 @@
 
 namespace Octavenz\Reoako\Client;
 
+use Exception;
 use Silverstripe\SiteConfig\SiteConfig;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
@@ -9,7 +10,6 @@ use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Exception\ClientException;
 use SilverStripe\Control\Director;
-use SilverStripe\View\ArrayData;
 
 class ReoakoClient
 {
@@ -42,6 +42,21 @@ class ReoakoClient
      * @var string
      */
     protected $apiKey = '';
+
+    /**
+     * @var string
+     */
+    protected $domain = '';
+
+    /**
+     * @var string
+     */
+    protected $origin = '';
+
+    /**
+     * @var string
+     */
+    protected $endpoint = '';
 
     /**
      * Get the API key. Priority is given first to explicitly set values on a singleton, then to configuration values
@@ -85,51 +100,46 @@ class ReoakoClient
         $this->endpoint = $this->domain . '/' . self::$default_api_base_path;
     }
 
-    function search($term)
+    public function search($term)
     {
         $client = new Client();
 
         if (empty($this->apiKey)) {
-            throw new \Exception("API key not set");
+            throw new Exception("API key not set");
         }
 
-        $headers = array(
-            'Content-Type' => 'application/json',
-            'Authorization' =>  'Token ' . $this->apiKey,
-            'Origin' => $this->origin,
-            'Accept' => 'application/json',
-        );
+        $headers = [
+            'Content-Type'  => 'application/json',
+            'Authorization' => 'Token ' . $this->apiKey,
+            'Origin'        => $this->origin,
+            'Accept'        => 'application/json',
+        ];
 
         try {
-            $response = $client->get(
-                $this->endpoint . '/entries/?search=' . $term,
-                ['headers' => $headers]
-            );
+            // Use urlencode to handle spaces/special characters
+            $url = $this->endpoint . '/entries/?search=' . urlencode($term);
 
-            $json = json_decode($response->getBody(), true);
-            return $json;
-        } catch (ClientException $error) {
-            // Get the original response
+            $response = $client->get($url, ['headers' => $headers]);
+
+            // Cast getBody() to string specifically to ensure json_decode works
+            return json_decode($response->getBody()->getContents(), true);
+
+        } catch (ClientException | ServerException $error) {
             $response = $error->getResponse();
-            // Get the info returned from the remote server.
-            $response_info = $response->getBody();
+            $content = $response ? $response->getBody()->getContents() : 'No response body';
+            $json = json_decode($content, true);
 
-            try {
-                $json = json_decode($response_info, true);
-                if (isset($json['message'])) {
-                    return $json;
-                }
-            } catch (\Exception $e) {
-            }
-
-            return $response_info;
-        } catch (ServerException $error) {
-            // Get the original response
-            $response = $error->getResponse();
-            // Get the info returned from the remote server.
-            $response_info = $response->getBody()->getContents();
-
-            return $response_info;
+            // Always return an array so the Controller doesn't crash
+            return [
+                'error' => true,
+                'message' => $json['message'] ?? $error->getMessage(),
+                'status' => $response ? $response->getStatusCode() : 500
+            ];
+        } catch (Exception $e) {
+            return [
+                'error' => true,
+                'message' => $e->getMessage()
+            ];
         }
     }
 }

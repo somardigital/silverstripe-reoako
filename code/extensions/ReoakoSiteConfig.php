@@ -2,10 +2,9 @@
 
 namespace Octavenz\Reoako\Extensions;
 
+use SilverStripe\Core\Extension;
 use SilverStripe\Forms\FieldList;
 use SilverStripe\Forms\TextField;
-
-use SilverStripe\ORM\DataExtension;
 
 use Octavenz\Reoako\Client\ReokakoClient;
 use SilverStripe\Core\Config\Config;
@@ -18,7 +17,7 @@ use SilverStripe\Core\Environment;
  * TODO: add subsite support
  * 
  */
-class ReoakoSiteConfig extends DataExtension
+class ReoakoSiteConfig extends Extension
 {
 
     private static $db = [
@@ -28,7 +27,7 @@ class ReoakoSiteConfig extends DataExtension
     public function updateCMSFields(FieldList $fields)
     {
 
-        $field = new TextField("ReoakoAPI", "Reoako API Key");
+        $field = TextField::create("ReoakoAPI", "Reoako API Key");
         // Check environment as override
         if ($envApiKey = Environment::getEnv('SS_REOAKO_API_KEY')) {
             $field->setInputType("password");

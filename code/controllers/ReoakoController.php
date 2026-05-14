@@ -2,9 +2,9 @@
 
 namespace Octavenz\Reoako\Controllers;
 
+use SilverStripe\Model\ArrayData;
+use SilverStripe\Model\List\ArrayList;
 use SilverStripe\Control\Controller;
-use SilverStripe\View\ArrayData;
-use SilverStripe\ORM\ArrayList;
 use Octavenz\Reoako\Client\ReoakoClient;
 use SilverStripe\View\Requirements;
 
@@ -38,47 +38,52 @@ class ReoakoController extends Controller
 
                 //return blank page
                 if (empty($val)) {
-                    return $this->customise(new ArrayData([]))->renderWith('reoako');
+                    return $this->customise(ArrayData::create([]))->renderWith('reoako');
                 }
 
                 $results = $rc->search($val);
 
                 if (isset($results['error'])) {
-                    return $this->customise(new ArrayData([
+                    return $this->customise(ArrayData::create([
                         'search_term' => $val,
-                        'error' => $results->error
+                        'error' => $results['error']
                     ]))->renderWith('reoako');
                 }
 
                 if ($request->isAjax()) {
 
-                    $this->customise(new ArrayData([
+                    return $this->customise(ArrayData::create([
                         'results' => $results
                     ]))->renderWith('ajax_results');
                 }
 
-                $data = new ArrayList();
+                $data = ArrayList::create();
                 foreach ($results as $rk => $rv) {
                     if ($rk == 'results') {
                         foreach ($rv as $e) {
-                            $r = new ArrayData([
+                            $translations = ArrayList::create();
+                            foreach (($e['translations'] ?? []) as $t) {
+                                $translations->push(ArrayData::create([
+                                    'url' => $t['url'] ?? null,
+                                    'en' =>  $t['en'] ?? null,
+                                    'mi' =>  $t['mi'] ?? null,
+                                    'slug' => $t['slug'] ?? null,
+                                    'audio_url' => $t['audio_url'] ?? null,
+                                ]));
+                            }
+
+                            $r = ArrayData::create([
                                 'headword' => $e['headword'],
                                 'function' => $e['function'],
                                 'definition' => $e['definition'],
-                                'translations' => new ArrayData([
-                                    'url' => $e['translations'][0]['url'],
-                                    'en' =>  $e['translations'][0]['en'],
-                                    'mi' =>  $e['translations'][0]['mi'],
-                                    'slug' => $e['translations'][0]['slug'],
-                                    'audio_url' => $e['translations'][0]['audio_url'],
-                                ])
+                                'translations' => $translations,
                             ]);
                             $data->push($r);
                         }
                     }
                 }
 
-                return $this->customise(new ArrayData([
+                return $this->customise(ArrayData::create([
                     'search_term' => $val,
                     'results' => $data,
                     'count' => count($data)

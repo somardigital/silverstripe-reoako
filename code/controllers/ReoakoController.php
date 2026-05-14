@@ -61,17 +61,21 @@ class ReoakoController extends Controller
                 foreach ($results as $rk => $rv) {
                     if ($rk == 'results') {
                         foreach ($rv as $e) {
+                            $translations = new ArrayList();
+                            foreach ($e['translations'] as $t) {
+                                $translations->push(new ArrayData([
+                                    'url' => $t['url'],
+                                    'en' =>  $t['en'],
+                                    'mi' =>  $t['mi'],
+                                    'slug' => $t['slug'],
+                                    'audio_url' => $t['audio_url'],
+                                ]));
+                            }
                             $r = new ArrayData([
                                 'headword' => $e['headword'],
                                 'function' => $e['function'],
                                 'definition' => $e['definition'],
-                                'translations' => new ArrayData([
-                                    'url' => $e['translations'][0]['url'],
-                                    'en' =>  $e['translations'][0]['en'],
-                                    'mi' =>  $e['translations'][0]['mi'],
-                                    'slug' => $e['translations'][0]['slug'],
-                                    'audio_url' => $e['translations'][0]['audio_url'],
-                                ])
+                                'translations' => $translations,
                             ]);
                             $data->push($r);
                         }

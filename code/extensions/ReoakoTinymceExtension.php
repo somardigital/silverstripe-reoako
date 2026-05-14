@@ -2,42 +2,34 @@
 
 namespace Octavenz\Reoako\Extensions;
 
-use SilverStripe\Admin\LeftAndMainExtension;
-use SilverStripe\Core\Manifest\ModuleLoader;
+use SilverStripe\Core\Extension;
+use SilverStripe\Core\Manifest\ModuleResourceLoader;
 use SilverStripe\Forms\HTMLEditor\HTMLEditorConfig;
-use SilverStripe\Forms\HTMLEditor\TinyMCEConfig;
 
 
-class ReoakoTinymceExtension extends LeftAndMainExtension
+class ReoakoTinymceExtension extends Extension
 {
-
-    function init()
+    public function onInit()
     {
-        parent::init();
+        $editor = HTMLEditorConfig::get('cms');
 
-        // Get the reoako module
-        $reoakoModule = ModuleLoader::inst()->getManifest()->getModule('octavenz/reoako');
-
-        // TinyMCE configuration
-        // Get config
-        /** @var TinyMCEConfig $editor */
-        $editor = HTMLEditorConfig::get_active();
-
-        // Enable reoako plugin
         if ($editor) {
+            $pluginPath = ModuleResourceLoader::singleton()
+                ->resolveResource('octavenz/reoako:dist/js/reoako-tinymce-plugin.js');
 
-            $editor
-                ->enablePlugins([
-                    'reoako' => $reoakoModule
-                        ->getResource('/dist/js/reoako-tinymce-plugin.js')
-                ]);
-            $editor->addButtonsToLine(
-                2,
-                'reoako-button'
-            );
+            $editor->enablePlugins([
+                'reoako' => $pluginPath,
+            ]);
+            $editor->addButtonsToLine(2, 'reoako-button');
+
+            $extendedValidElements = $editor->getOption('extended_valid_elements');
+            if (!str_contains((string) $extendedValidElements, 'reoako[*]')) {
+                $extendedValidElements = $extendedValidElements
+                    ? $extendedValidElements . ',reoako[*]'
+                    : 'reoako[*]';
+
+                $editor->setOption('extended_valid_elements', $extendedValidElements);
+            }
         }
-
-        $valid_options = $editor->getOption('valid_elements');
-        $editor->setOption('valid_elements',  $valid_options . ',reoako[*]');
     }
 }

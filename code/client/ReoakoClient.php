@@ -2,14 +2,14 @@
 
 namespace Octavenz\Reoako\Client;
 
-use Silverstripe\SiteConfig\SiteConfig;
+use Exception;
+use SilverStripe\SiteConfig\SiteConfig;
 use SilverStripe\Core\Config\Config;
 use SilverStripe\Core\Environment;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ServerException;
 use GuzzleHttp\Exception\ClientException;
 use SilverStripe\Control\Director;
-use SilverStripe\View\ArrayData;
 
 class ReoakoClient
 {
@@ -73,7 +73,7 @@ class ReoakoClient
         }
 
         // Check config for a value defined in YAML
-        $key = Config::inst()->get(ReokakoClient::class, 'api_key');
+        $key = Config::inst()->get(ReoakoClient::class, 'api_key');
         if (!empty($key)) {
             return $key;
         }
@@ -87,8 +87,8 @@ class ReoakoClient
         return '';
     }
 
-    private string $endpoint;
-    private string $origin;
+    private readonly string $endpoint;
+    private readonly string $origin;
 
     public function __construct()
     {
@@ -97,51 +97,40 @@ class ReoakoClient
         $this->endpoint = $this->getDefaultApiDomain() . '/' . $this->getDefaultApiBasePath();
     }
 
-    function search($term)
+    public function search($term)
     {
         $client = new Client();
 
         if (empty($this->apiKey)) {
-            throw new \Exception("API key not set");
+            throw new Exception("API key not set");
         }
 
-        $headers = array(
+        $headers = [
             'Content-Type' => 'application/json',
             'Authorization' =>  'Token ' . $this->apiKey,
             'Origin' => $this->origin,
             'Accept' => 'application/json',
-        );
+        ];
 
         try {
             $response = $client->get(
-                $this->endpoint . '/entries/?search=' . $term,
+                $this->endpoint . '/entries/?search=' . urlencode((string) $term),
                 ['headers' => $headers]
             );
 
-            $json = json_decode($response->getBody(), true);
-            return $json;
-        } catch (ClientException $error) {
-            // Get the original response
+            return json_decode($response->getBody()->getContents(), true);
+        } catch (ClientException|ServerException $error) {
             $response = $error->getResponse();
-            // Get the info returned from the remote server.
-            $response_info = $response->getBody();
+            $content = $response ? $response->getBody()->getContents() : '';
+            $json = json_decode($content, true);
 
-            try {
-                $json = json_decode($response_info, true);
-                if (isset($json['message'])) {
-                    return $json;
-                }
-            } catch (\Exception $e) {
-            }
-
-            return $response_info;
-        } catch (ServerException $error) {
-            // Get the original response
-            $response = $error->getResponse();
-            // Get the info returned from the remote server.
-            $response_info = $response->getBody()->getContents();
-
-            return $response_info;
+            return [
+                'error' => $json['message'] ?? ($json['detail'] ?? $error->getMessage()),
+            ];
+        } catch (Exception $error) {
+            return [
+                'error' => $error->getMessage(),
+            ];
         }
     }
 }

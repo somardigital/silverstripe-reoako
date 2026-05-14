@@ -2,9 +2,9 @@
 
 namespace Octavenz\Reoako\Extensions;
 
-use SilverStripe\ORM\DataExtension;
+use SilverStripe\Core\Extension;
 
-class ReoakoShortCodeExtension extends DataExtension
+class ReoakoShortCodeExtension extends Extension
 {
 
     private static $casting = [
